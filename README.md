@@ -1,4 +1,4 @@
-#Tên dự án: Lập trình ứng dụng điểu khiển commandline từ xa.
+# Dự án: Lập trình ứng dụng điều khiển commandline từ xa
 
 ### Danh sách thành viên:
 * **Đặng Thành Đạt** - 086206005153
