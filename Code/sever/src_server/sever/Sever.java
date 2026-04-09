@@ -81,13 +81,55 @@ public class BaiTap15_RemoteServer {
             }
         }
     }
+    private static void sendResult(BufferedWriter writer, String result) throws Exception {
+        writer.write("OUTPUT_BEGIN\n");
+        writer.write(result);
+        if (!result.endsWith("\n")) {
+            writer.write("\n");
+        }
+        writer.write("OUTPUT_END\n");
+        writer.flush();
+    }
 
+    private static String executeCommand(String command) {
+        StringBuilder output = new StringBuilder();
 
+        try {
+            ProcessBuilder pb;
 
+            if (isWindows()) {
+                pb = new ProcessBuilder("cmd", "/c", command);
+            } else {
+                pb = new ProcessBuilder("bash", "-lc", command);
+            }
 
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
 
+            try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)
+            )) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
 
+            int exitCode = process.waitFor();
+            output.append("Exit code: ").append(exitCode);
 
+        } catch (Exception e) {
+            output.append("Loi thuc thi lenh: ").append(e.getMessage()).append("\n");
+            output.append("Exit code: -1");
+        }
+
+        return output.toString();
+    }
+
+    private static boolean isWindows() {
+        String os = System.getProperty("os.name").toLowerCase();
+        return os.contains("win");
+    }
 
 
 
