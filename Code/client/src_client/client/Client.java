@@ -21,7 +21,30 @@ public class BaiTap15_RemoteClient {
             System.out.print("Nhap IP server: ");
             String serverIp = sc.nextLine().trim();
         }
+        
+            try (
+                Socket socket = new Socket(serverIp, PORT);
+                BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
+                );
+                BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)
+                )
+            ) {
+                String status = reader.readLine();
 
+                if (!"CONNECTED".equals(status)) {
+                    System.out.println("Khong the ket noi toi server.");
+                    return;
+                }
+
+                System.out.println("Da ket noi toi server: " + serverIp + ":" + PORT);
+                System.out.println("Nhap lenh de chay tren may server.");
+                System.out.println("Go 'exit' de thoat client.");
+                System.out.println("Go 'shutdown_server' de tat server.");
+                System.out.println("--------------------------------");
+
+ 
         
     }
 }
