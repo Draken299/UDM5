@@ -1,131 +1,117 @@
-package Client;
+package com.mycompany.baitap15_remoteclient;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
+import java.io.IOException;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
-public class Client {
+public class BaiTap15_RemoteClient {
+
+    private static final int PORT = 7000;
+    private static final String OUTPUT_BEGIN = "OUTPUT_BEGIN";
+    private static final String OUTPUT_END = "OUTPUT_END";
 
     public static void main(String[] args) {
-           
         Scanner sc = new Scanner(System.in);
 
+        System.out.println("===== REMOTE COMMAND CLIENT =====");
+
         try {
-            System.out.print("Nhập IP của server: ");
-            String serverIp = sc.nextLine();
+            System.out.print("Nhap IP server: ");
+            String serverIp = sc.nextLine().trim();
 
-            System.out.println("Đang kết nối tới " + serverIp + ":7000 ...");
-            Socket socket = new Socket(serverIp, 7000);
-            System.out.println("Đã kết nối tới server: " + serverIp + ":7000");
+            try (
+                Socket socket = new Socket(serverIp, PORT);
+                BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
+                );
+                BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)
+                )
+            ) {
+                String authRequest = reader.readLine();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+                if (!"AUTH_REQUIRED".equals(authRequest)) {
+                    System.out.println("Server khong phan hoi dung giao thuc.");
+                    return;
+                }
 
-            writer.println("hello");
-            System.out.println("Phản hồi từ server: " + reader.readLine());
+                System.out.print("Nhap password: ");
+                String password = sc.nextLine();
 
-            Thread receiveThread = new Thread(() -> {
-                try {
-                    while (true) {
-                        String response = reader.readLine();
-                        if (response == null) {
-                            System.out.println("\nServer đã ngắt kết nối.");
+                writer.write(password);
+                writer.write("\n");
+                writer.flush();
+
+                String authResult = reader.readLine();
+
+                if ("AUTH_FAIL".equals(authResult)) {
+                    System.out.println("Sai password. Ket noi bi tu choi.");
+                    return;
+                }
+
+                if (!"AUTH_OK".equals(authResult)) {
+                    System.out.println("Loi giao thuc xac thuc.");
+                    return;
+                }
+
+                System.out.println("Da ket noi va xac thuc thanh cong toi server: " + serverIp + ":" + PORT);
+                System.out.println("Nhap lenh de chay tren may server.");
+                System.out.println("Go 'pwd' de xem thu muc hien tai tren server.");
+                System.out.println("Go 'cd <duong_dan>' de doi thu muc.");
+                System.out.println("Go 'exit' de thoat.");
+                System.out.println("--------------------------------");
+
+                while (true) {
+                    System.out.print("remote-shell> ");
+                    String command = sc.nextLine();
+
+                    writer.write(command);
+                    writer.write("\n");
+                    writer.flush();
+
+                    String line;
+
+                    while ((line = reader.readLine()) != null) {
+                        if (OUTPUT_BEGIN.equals(line)) {
+                            break;
+}
+                    }
+
+                    if (line == null) {
+                        System.out.println("Mat ket noi toi server.");
+                        break;
+                    }
+
+                    while ((line = reader.readLine()) != null) {
+                        if (OUTPUT_END.equals(line)) {
                             break;
                         }
-
-                        if (response.startsWith("SERVER_MSG:")) {
-                            System.out.println("\nTin nhắn từ server: " + response.substring(11));
-                        } else {
-                            System.out.println("\nPhản hồi từ server: " + response);
-                        }
+                        System.out.println(line);
                     }
-                } catch (Exception e) {
-                    System.out.println("\nMất kết nối tới server.");
-                }
-            });
 
-            receiveThread.setDaemon(true);
-            receiveThread.start();
-
-            boolean exit = false;
-
-            while (!exit) {
-                System.out.println("\nMENU:");
-                System.out.println("1. Shutdown");
-                System.out.println("2. Restart");
-                System.out.println("3. Cancel Shutdown/Restart");
-                System.out.println("4. Screenshot");
-                System.out.println("5. Gửi tin nhắn tới server");
-                System.out.println("0. Thoát");
-                System.out.print("Chọn: ");
-
-                int choice = Integer.parseInt(sc.nextLine());
-
-                switch (choice) {
-                    case 1:
-                        writer.println("shutdown");
+                    if (line == null) {
+                        System.out.println("Mat ket noi toi server.");
                         break;
+                    }
 
-                    case 2:
-                        writer.println("restart");
+                    System.out.println("--------------------------------");
+
+                    if ("exit".equalsIgnoreCase(command.trim())) {
                         break;
-
-                    case 3:
-                        writer.println("cancel");
-                        break;
-
-                    case 4:
-                 writer.println("screenshot");
-
-                        int imageSize = Integer.parseInt(reader.readLine());
-                        byte[] imageBytes = new byte[imageSize];
-
-                        int totalRead = 0;
-                        while (totalRead < imageSize) {
-                            int count = socket.getInputStream().read(imageBytes, totalRead, imageSize - totalRead);
-                            if (count == -1) {
-                                throw new RuntimeException("Mất kết nối khi đang nhận ảnh");
-                            }
-                            totalRead += count;
-                        }
-
-                        System.out.print("Nhập tên file ảnh: ");
-                        String fileName = sc.nextLine();
-
-                        Path imagePath = Paths.get(fileName + ".png");
-                        Files.write(imagePath, imageBytes);
-
-                        System.out.println("Đã lưu ảnh tại: " + imagePath.toAbsolutePath());
-                        break;
-
-                    case 5:
-                        System.out.print("Nhập tin nhắn gửi server: ");
-                        String msg = sc.nextLine();
-                        writer.println("CHAT:" + msg);
-                        break;
-
-                    case 0:
-                        writer.println("exit");
-                        exit = true;
-                        System.out.println("Client đang thoát...");
-                        socket.close();
-                        break;
-
-                    default:
-                        System.out.println("Lựa chọn không hợp lệ!");
-                        break;
+                    }
                 }
             }
 
-        } catch (Exception e) {
+        } catch (IOException e) {
+            System.out.println("Loi client: " + e.getMessage());
             e.printStackTrace();
         } finally {
             sc.close();
         }
     }
-}       
+}
