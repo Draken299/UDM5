@@ -20,8 +20,7 @@ public class BaiTap15_RemoteClient {
         try {
             System.out.print("Nhap IP server: ");
             String serverIp = sc.nextLine().trim();
-        }
-        
+
             try (
                 Socket socket = new Socket(serverIp, PORT);
                 BufferedReader reader = new BufferedReader(
@@ -44,7 +43,49 @@ public class BaiTap15_RemoteClient {
                 System.out.println("Go 'shutdown_server' de tat server.");
                 System.out.println("--------------------------------");
 
- 
-        
+                while (true) {
+                    System.out.print("remote-shell> ");
+                    String command = sc.nextLine();
+
+                    writer.write(command);
+                    writer.write("\n");
+                    writer.flush();
+
+                    String line;
+
+                    // Tim tin hieu bat dau output
+                    while ((line = reader.readLine()) != null) {
+                        if ("OUTPUT_BEGIN".equals(line)) {
+                            break;
+                        }
+                    }
+
+                    if (line == null) {
+                        System.out.println("Mat ket noi toi server.");
+                        break;
+                    }
+
+                    // Doc va in ket qua cho den khi gap tin hieu ket thuc
+                    while ((line = reader.readLine()) != null) {
+                        if ("OUTPUT_END".equals(line)) {
+                            break;
+                        }
+                        System.out.println(line);
+                    }
+
+                    System.out.println("--------------------------------");
+
+                    if ("exit".equalsIgnoreCase(command)) {
+                        break;
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            System.out.println("Loi client: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            sc.close();
+        }
     }
 }
