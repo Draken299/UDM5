@@ -137,4 +137,36 @@ public class BaiTap15_RemoteServer {
     private static Path getInitialDirectory() {
         return Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
     }
+    //xu ly thu muc va cac lenh pwd, cd
+    //ham xu ly lenh CD
+    private static Path resolveCd(String command, Path currentDirectory) {
+        try {
+            String target = command.substring(2).trim();
+
+            if (target.isEmpty()) {
+                return currentDirectory;
+            }
+            
+            //xu ly dau ngoac kep va duong dan
+            if ((target.startsWith("\"") && target.endsWith("\"")) ||
+                (target.startsWith("'") && target.endsWith("'"))) {
+                target = target.substring(1, target.length() - 1).trim();
+            }
+
+            if (target.isEmpty()) {
+                return currentDirectory;
+            }
+
+            Path newPath = Paths.get(target);
+
+            if (!newPath.isAbsolute()) {
+                newPath = currentDirectory.resolve(newPath);
+            }
+
+            return newPath.normalize().toAbsolutePath();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
 }
