@@ -4,94 +4,166 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class BaiTap15_RemoteServer {
 
     private static final int PORT = 7000;
+    private static final String SERVER_PASSWORD = "1103";
+    private static final String OUTPUT_BEGIN = "OUTPUT_BEGIN";
+    private static final String OUTPUT_END = "OUTPUT_END";
 
     public static void main(String[] args) {
-        System.out.println("===== REMOTE COMMAND SERVER =====");
-        System.out.println("Server dang chay tai port " + PORT);
-        System.out.println("Dang cho client ket noi...");
-
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("===== REMOTE COMMAND SERVER =====");
+            System.out.println("Server dang chay tai port " + PORT);
+            System.out.println("Dang cho client ket noi...");
+
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.println("Client connected: " + socket.getInetAddress().getHostAddress());
-                
-                handleClient(socket); //Goi logic cua TV6
-                
-                System.out.println("Client da ngat ket noi.");
-                System.out.println("Dang cho client khac...");
+                String clientIp = socket.getInetAddress().getHostAddress();
+                System.out.println("Client dang ket noi: " + clientIp);
+
+                Thread clientThread = new Thread(() -> handleClient(socket));
+                clientThread.start();
             }
-        } catch (Exception e) {
-           //Logic xu ly chuoi cua tv6
-            System.out.println("Lỗi server: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Loi server: " + e.getMessage());
             e.printStackTrace();
         }
     }
- private static void handleClient(Socket socket) {
+
+    private static void handleClient(Socket socket) {
+        String clientIp = socket.getInetAddress().getHostAddress();
+        Path currentDirectory = getInitialDirectory();
+
         try (
+            Socket clientSocket = socket;
             BufferedReader reader = new BufferedReader(
-                new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
+                new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8)
             );
             BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)
+                new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8)
             )
         ) {
-            writer.write("CONNECTED\n");
+            writer.write("AUTH_REQUIRED\n");
             writer.flush();
+
+            String password = reader.readLine();
+            if (password == null || !SERVER_PASSWORD.equals(password.trim())) {
+                writer.write("AUTH_FAIL\n");
+                writer.flush();
+                System.out.println("Client " + clientIp + " xac thuc that bai.");
+                return;
+            }
+
+            writer.write("AUTH_OK\n");
+            writer.flush();
+
+            System.out.println("Client " + clientIp + " xac thuc thanh cong.");
+            System.out.println("Thu muc ban dau cua client " + clientIp + ": " + currentDirectory);
 
             String command;
             while ((command = reader.readLine()) != null) {
                 command = command.trim();
 
                 if (command.isEmpty()) {
-                    sendResult(writer, "Lenh rong.\nExit code: 1");
+                    sendResult(writer, "Lenh rong.\nCurrent directory: " + currentDirectory + "\nExit code: 1");
                     continue;
                 }
 
+                System.out.println("[" + clientIp + "] Lenh: " + command);
+
                 if (command.equalsIgnoreCase("exit")) {
-                    sendResult(writer, "Client da thoat.\nExit code: 0");
+                    sendResult(writer, "Client da thoat.\nCurrent directory: " + currentDirectory + "\nExit code: 0");
                     break;
                 }
 
-                if (command.equalsIgnoreCase("shutdown_server")) {
-                    sendResult(writer, "Server se dung.\nExit code: 0");
-                    writer.flush();
-                    socket.close();
-                    System.exit(0);
+                if (command.equalsIgnoreCase("pwd")) {
+                    sendResult(writer, currentDirectory.toString() + "\nExit code: 0");
+                    continue;
                 }
 
-                System.out.println("Lenh nhan tu client: " + command);
-                String result = executeCommand(command);
+                if (command.equalsIgnoreCase("cd")) {
+                    sendResult(writer, currentDirectory.toString() + "\nExit code: 0");
+                    continue;
+                }
+
+                if (command.toLowerCase().startsWith("cd ")) {
+                    Path newDirectory = resolveCd(command, currentDirectory);
+
+                    if (newDirectory == null) {
+                        sendResult(writer, "Duong dan khong hop le.\nCurrent directory: " + currentDirectory + "\nExit code: 1");
+                        continue;
+                    }
+
+                    if (!Files.exists(newDirectory)) {
+                        sendResult(writer, "Thu muc khong ton tai: " + newDirectory + "\nCurrent directory: " + currentDirectory + "\nExit code: 1");
+                        continue;
+                    }
+
+                    if (!Files.isDirectory(newDirectory)) {
+                        sendResult(writer, "Day khong phai la thu muc: " + newDirectory + "\nCurrent directory: " + currentDirectory + "\nExit code: 1");
+                        continue;
+                    }
+
+                    currentDirectory = newDirectory.normalize().toAbsolutePath();
+                    sendResult(writer, "Da chuyen thu muc den: " + currentDirectory + "\nExit code: 0");
+                    continue;
+                }
+
+                String result = executeCommand(command, currentDirectory);
                 sendResult(writer, result);
             }
 
-        } catch (Exception e) {
-            System.out.println("Loi xu ly client: " + e.getMessage());
-        } finally {
-            try {
-                socket.close();
-            } catch (Exception e) {
-                System.out.println("Khong the dong socket.");
-            }
+        } catch (SocketException e) {
+            System.out.println("Client " + clientIp + " da ngat ket noi.");
+        } catch (IOException e) {
+            System.out.println("Loi xu ly client " + clientIp + ": " + e.getMessage());
         }
-    }
-    private static void sendResult(BufferedWriter writer, String result) throws Exception {
-        writer.write("OUTPUT_BEGIN\n");
-        writer.write(result);
-        if (!result.endsWith("\n")) {
-            writer.write("\n");
-        }
-        writer.write("OUTPUT_END\n");
-        writer.flush();
     }
 
-    private static String executeCommand(String command) {
+    private static Path getInitialDirectory() {
+        return Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
+    }
+
+    private static Path resolveCd(String command, Path currentDirectory) {
+        try {
+            String target = command.substring(2).trim();
+
+            if (target.isEmpty()) {
+                return currentDirectory;
+            }
+
+            if ((target.startsWith("\"") && target.endsWith("\"")) ||
+                (target.startsWith("'") && target.endsWith("'"))) {
+                target = target.substring(1, target.length() - 1).trim();
+            }
+
+            if (target.isEmpty()) {
+                return currentDirectory;
+            }
+
+            Path newPath = Paths.get(target);
+
+            if (!newPath.isAbsolute()) {
+                newPath = currentDirectory.resolve(newPath);
+            }
+
+            return newPath.normalize().toAbsolutePath();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String executeCommand(String command, Path currentDirectory) {
         StringBuilder output = new StringBuilder();
 
         try {
@@ -103,7 +175,9 @@ public class BaiTap15_RemoteServer {
                 pb = new ProcessBuilder("bash", "-lc", command);
             }
 
+            pb.directory(currentDirectory.toFile());
             pb.redirectErrorStream(true);
+
             Process process = pb.start();
 
             try (BufferedReader br = new BufferedReader(
@@ -116,22 +190,37 @@ public class BaiTap15_RemoteServer {
             }
 
             int exitCode = process.waitFor();
+
+            output.append("Current directory: ")
+                  .append(currentDirectory.toAbsolutePath().normalize())
+                  .append("\n");
             output.append("Exit code: ").append(exitCode);
 
         } catch (Exception e) {
             output.append("Loi thuc thi lenh: ").append(e.getMessage()).append("\n");
+            output.append("Current directory: ")
+                  .append(currentDirectory.toAbsolutePath().normalize())
+                  .append("\n");
             output.append("Exit code: -1");
         }
 
         return output.toString();
     }
 
+    private static void sendResult(BufferedWriter writer, String result) throws IOException {
+        writer.write(OUTPUT_BEGIN);
+        writer.write("\n");
+        writer.write(result);
+        if (!result.endsWith("\n")) {
+            writer.write("\n");
+        }
+        writer.write(OUTPUT_END);
+        writer.write("\n");
+        writer.flush();
+    }
+
     private static boolean isWindows() {
         String os = System.getProperty("os.name").toLowerCase();
         return os.contains("win");
     }
-
-
-
 }
-
