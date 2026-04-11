@@ -4,7 +4,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+<<<<<<< HEAD
 import java.io.IOException;
+=======
+>>>>>>> main
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
@@ -12,8 +15,11 @@ import java.util.Scanner;
 public class BaiTap15_RemoteClient {
 
     private static final int PORT = 7000;
+<<<<<<< HEAD
     private static final String OUTPUT_BEGIN = "OUTPUT_BEGIN";
     private static final String OUTPUT_END = "OUTPUT_END";
+=======
+>>>>>>> main
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
@@ -33,6 +39,7 @@ public class BaiTap15_RemoteClient {
                     new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)
                 )
             ) {
+<<<<<<< HEAD
                 String authRequest = reader.readLine();
 
                 if (!"AUTH_REQUIRED".equals(authRequest)) {
@@ -66,6 +73,21 @@ public class BaiTap15_RemoteClient {
                 System.out.println("Go 'exit' de thoat.");
                 System.out.println("--------------------------------");
 
+=======
+                String status = reader.readLine();
+
+                if (!"CONNECTED".equals(status)) {
+                    System.out.println("Khong the ket noi toi server.");
+                    return;
+                }
+
+                System.out.println("Da ket noi toi server: " + serverIp + ":" + PORT);
+                System.out.println("Nhap lenh de chay tren may server.");
+                System.out.println("Go 'exit' de thoat client.");
+                System.out.println("Go 'shutdown_server' de tat server.");
+                System.out.println("--------------------------------");
+
+>>>>>>> main
                 while (true) {
                     System.out.print("remote-shell> ");
                     String command = sc.nextLine();
@@ -76,6 +98,7 @@ public class BaiTap15_RemoteClient {
 
                     String line;
 
+<<<<<<< HEAD
                     while ((line = reader.readLine()) != null) {
                         if (OUTPUT_BEGIN.equals(line)) {
                             break;
@@ -92,6 +115,13 @@ public class BaiTap15_RemoteClient {
                             break;
                         }
                         System.out.println(line);
+=======
+                    // Tim tin hieu bat dau output
+                    while ((line = reader.readLine()) != null) {
+                        if ("OUTPUT_BEGIN".equals(line)) {
+                            break;
+                        }
+>>>>>>> main
                     }
 
                     if (line == null) {
@@ -99,15 +129,33 @@ public class BaiTap15_RemoteClient {
                         break;
                     }
 
+<<<<<<< HEAD
                     System.out.println("--------------------------------");
 
                     if ("exit".equalsIgnoreCase(command.trim())) {
+=======
+                    // Doc va in ket qua cho den khi gap tin hieu ket thuc
+                    while ((line = reader.readLine()) != null) {
+                        if ("OUTPUT_END".equals(line)) {
+                            break;
+                        }
+                        System.out.println(line);
+                    }
+
+                    System.out.println("--------------------------------");
+
+                    if ("exit".equalsIgnoreCase(command)) {
+>>>>>>> main
                         break;
                     }
                 }
             }
 
+<<<<<<< HEAD
         } catch (IOException e) {
+=======
+        } catch (Exception e) {
+>>>>>>> main
             System.out.println("Loi client: " + e.getMessage());
             e.printStackTrace();
         } finally {
