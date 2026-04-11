@@ -168,5 +168,48 @@ public class BaiTap15_RemoteServer {
             return null;
         }
     }
-    
+    //thuc thi lenh he thong
+    private static String executeCommand(String command, Path currentDirectory) {
+        StringBuilder output = new StringBuilder();
+
+        try {
+            ProcessBuilder pb;
+
+            if (isWindows()) {
+                pb = new ProcessBuilder("cmd", "/c", command);
+            } else {
+                pb = new ProcessBuilder("bash", "-lc", command);
+            }
+
+            pb.directory(currentDirectory.toFile());
+            pb.redirectErrorStream(true);
+
+            Process process = pb.start();
+
+            try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)
+            )) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
+
+            int exitCode = process.waitFor();
+
+            output.append("Current directory: ")
+                  .append(currentDirectory.toAbsolutePath().normalize())
+                  .append("\n");
+            output.append("Exit code: ").append(exitCode);
+
+        } catch (Exception e) {
+            output.append("Loi thuc thi lenh: ").append(e.getMessage()).append("\n");
+            output.append("Current directory: ")
+                  .append(currentDirectory.toAbsolutePath().normalize())
+                  .append("\n");
+            output.append("Exit code: -1");
+        }
+
+        return output.toString();
+    }
 }
