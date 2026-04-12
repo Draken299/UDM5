@@ -1,165 +1,163 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package com.mycompany.baitap15_remoteclient;
 
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-<<<<<<< HEAD
 import java.io.IOException;
-=======
->>>>>>> main
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
-public class BaiTap15_RemoteClient {
+public class RemoteClientApp extends JFrame {
 
-    private static final int PORT = 7000;
-<<<<<<< HEAD
+    private Socket socket;
+    private BufferedReader reader;
+    private BufferedWriter writer;
+    private boolean connected = false;
+
     private static final String OUTPUT_BEGIN = "OUTPUT_BEGIN";
     private static final String OUTPUT_END = "OUTPUT_END";
-=======
->>>>>>> main
 
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+    private JTextField txtIp;
+    private JTextField txtPort;
+    private JPasswordField txtPassword;
+    private JTextArea txtOutput;
+    private JTextField txtCommand;
+    private JButton btnConnect;
+    private JButton btnDisconnect;
+    private JButton btnSend;
+    private JButton btnClear;
+    private JLabel lblStatus;
 
-        System.out.println("===== REMOTE COMMAND CLIENT =====");
-
-        try {
-            System.out.print("Nhap IP server: ");
-            String serverIp = sc.nextLine().trim();
-
-            try (
-                Socket socket = new Socket(serverIp, PORT);
-                BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
-                );
-                BufferedWriter writer = new BufferedWriter(
-                    new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)
-                )
-            ) {
-<<<<<<< HEAD
-                String authRequest = reader.readLine();
-
-                if (!"AUTH_REQUIRED".equals(authRequest)) {
-                    System.out.println("Server khong phan hoi dung giao thuc.");
-                    return;
-                }
-
-                System.out.print("Nhap password: ");
-                String password = sc.nextLine();
-
-                writer.write(password);
-                writer.write("\n");
-                writer.flush();
-
-                String authResult = reader.readLine();
-
-                if ("AUTH_FAIL".equals(authResult)) {
-                    System.out.println("Sai password. Ket noi bi tu choi.");
-                    return;
-                }
-
-                if (!"AUTH_OK".equals(authResult)) {
-                    System.out.println("Loi giao thuc xac thuc.");
-                    return;
-                }
-
-                System.out.println("Da ket noi va xac thuc thanh cong toi server: " + serverIp + ":" + PORT);
-                System.out.println("Nhap lenh de chay tren may server.");
-                System.out.println("Go 'pwd' de xem thu muc hien tai tren server.");
-                System.out.println("Go 'cd <duong_dan>' de doi thu muc.");
-                System.out.println("Go 'exit' de thoat.");
-                System.out.println("--------------------------------");
-
-=======
-                String status = reader.readLine();
-
-                if (!"CONNECTED".equals(status)) {
-                    System.out.println("Khong the ket noi toi server.");
-                    return;
-                }
-
-                System.out.println("Da ket noi toi server: " + serverIp + ":" + PORT);
-                System.out.println("Nhap lenh de chay tren may server.");
-                System.out.println("Go 'exit' de thoat client.");
-                System.out.println("Go 'shutdown_server' de tat server.");
-                System.out.println("--------------------------------");
-
->>>>>>> main
-                while (true) {
-                    System.out.print("remote-shell> ");
-                    String command = sc.nextLine();
-
-                    writer.write(command);
-                    writer.write("\n");
-                    writer.flush();
-
-                    String line;
-
-<<<<<<< HEAD
-                    while ((line = reader.readLine()) != null) {
-                        if (OUTPUT_BEGIN.equals(line)) {
-                            break;
-}
-                    }
-
-                    if (line == null) {
-                        System.out.println("Mat ket noi toi server.");
-                        break;
-                    }
-
-                    while ((line = reader.readLine()) != null) {
-                        if (OUTPUT_END.equals(line)) {
-                            break;
-                        }
-                        System.out.println(line);
-=======
-                    // Tim tin hieu bat dau output
-                    while ((line = reader.readLine()) != null) {
-                        if ("OUTPUT_BEGIN".equals(line)) {
-                            break;
-                        }
->>>>>>> main
-                    }
-
-                    if (line == null) {
-                        System.out.println("Mat ket noi toi server.");
-                        break;
-                    }
-
-<<<<<<< HEAD
-                    System.out.println("--------------------------------");
-
-                    if ("exit".equalsIgnoreCase(command.trim())) {
-=======
-                    // Doc va in ket qua cho den khi gap tin hieu ket thuc
-                    while ((line = reader.readLine()) != null) {
-                        if ("OUTPUT_END".equals(line)) {
-                            break;
-                        }
-                        System.out.println(line);
-                    }
-
-                    System.out.println("--------------------------------");
-
-                    if ("exit".equalsIgnoreCase(command)) {
->>>>>>> main
-                        break;
-                    }
-                }
-            }
-
-<<<<<<< HEAD
-        } catch (IOException e) {
-=======
-        } catch (Exception e) {
->>>>>>> main
-            System.out.println("Loi client: " + e.getMessage());
-            e.printStackTrace();
-        } finally {
-            sc.close();
-        }
+    public RemoteClientApp() {
+        initComponents();
+        initCustomSettings();
     }
-}
+
+    private void initComponents() {
+        setTitle("Remote Command Client GUI");
+        setSize(800, 500);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setLayout(new BorderLayout(10, 10));
+
+        Font font = new Font("Segoe UI", Font.PLAIN, 14);
+
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        topPanel.setBorder(BorderFactory.createTitledBorder("Ket noi"));
+
+        JLabel lblIp = new JLabel("Server IP:");
+        lblIp.setFont(font);
+        txtIp = new JTextField(10);
+        txtIp.setFont(font);
+
+        JLabel lblPort = new JLabel("Port:");
+        lblPort.setFont(font);
+        txtPort = new JTextField(5);
+        txtPort.setFont(font);
+
+        JLabel lblPassword = new JLabel("Password:");
+        lblPassword.setFont(font);
+        txtPassword = new JPasswordField(10);
+        txtPassword.setFont(font);
+
+        btnConnect = new JButton("Connect");
+        btnConnect.setFont(font);
+
+        btnDisconnect = new JButton("Disconnect");
+        btnDisconnect.setFont(font);
+
+        lblStatus = new JLabel("Status: Disconnected");
+        lblStatus.setFont(font);
+
+        topPanel.add(lblIp);
+        topPanel.add(txtIp);
+        topPanel.add(lblPort);
+        topPanel.add(txtPort);
+        topPanel.add(lblPassword);
+        topPanel.add(txtPassword);
+        topPanel.add(btnConnect);
+        topPanel.add(btnDisconnect);
+        topPanel.add(lblStatus);
+
+        add(topPanel, BorderLayout.NORTH);
+
+        txtOutput = new JTextArea();
+        txtOutput.setFont(font);
+        txtOutput.setEditable(false);
+        txtOutput.setLineWrap(true);
+        txtOutput.setWrapStyleWord(true);
+
+        JScrollPane scrollPane = new JScrollPane(txtOutput);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Ket qua"));
+        add(scrollPane, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        bottomPanel.setBorder(BorderFactory.createTitledBorder("Dieu khien"));
+
+        JLabel lblCommand = new JLabel("Command:");
+        lblCommand.setFont(font);
+
+        txtCommand = new JTextField(30);
+        txtCommand.setFont(font);
+
+        btnSend = new JButton("Send");
+        btnSend.setFont(font);
+
+        btnClear = new JButton("Clear");
+        btnClear.setFont(font);
+
+        bottomPanel.add(lblCommand);
+        bottomPanel.add(txtCommand);
+        bottomPanel.add(btnSend);
+        bottomPanel.add(btnClear);
+
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        btnConnect.addActionListener(e -> connectToServer());
+        btnDisconnect.addActionListener(e -> disconnectFromServer());
+        btnSend.addActionListener(e -> sendCommand());
+        btnClear.addActionListener(e -> txtOutput.setText(""));
+        txtCommand.addActionListener(e -> sendCommand());
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                disconnectSilentlyOnClose();
+                dispose();
+                System.exit(0);
+            }
+        });
+    }
+
+    private void initCustomSettings() {
+        txtIp.setText("127.0.0.1");
+        txtPort.setText("7000");
+        txtPassword.setText("");
+        txtCommand.setText("");
+        txtOutput.setText("===== REMOTE COMMAND CLIENT GUI =====\n");
+
+        btnDisconnect.setEnabled(false);
+        btnSend.setEnabled(false);
+        txtCommand.setEnabled(false);
+    }
