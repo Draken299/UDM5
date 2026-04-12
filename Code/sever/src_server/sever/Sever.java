@@ -13,8 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+//khoi tao cau truc va cac hang so
 public class BaiTap15_RemoteServer {
-
+    //hang so cau hinh he thong
     private static final int PORT = 7000;
     private static final String SERVER_PASSWORD = "1103";
     private static final String OUTPUT_BEGIN = "OUTPUT_BEGIN";
@@ -25,12 +26,22 @@ public class BaiTap15_RemoteServer {
             System.out.println("===== REMOTE COMMAND SERVER =====");
             System.out.println("Server dang chay tai port " + PORT);
             System.out.println("Dang cho client ket noi...");
+<<<<<<< HEAD
 
+=======
+            
+            //thiet lap xu ly da luong
+>>>>>>> 7aebb849867c0d0b84a3b15863c9f497e1c073c7
             while (true) {
                 Socket socket = serverSocket.accept();
                 String clientIp = socket.getInetAddress().getHostAddress();
                 System.out.println("Client dang ket noi: " + clientIp);
+<<<<<<< HEAD
 
+=======
+                
+                //moi client 1 thread rieng
+>>>>>>> 7aebb849867c0d0b84a3b15863c9f497e1c073c7
                 Thread clientThread = new Thread(() -> handleClient(socket));
                 clientThread.start();
             }
@@ -39,7 +50,11 @@ public class BaiTap15_RemoteServer {
             e.printStackTrace();
         }
     }
+<<<<<<< HEAD
 
+=======
+    //Co che xac thuc mat khau
+>>>>>>> 7aebb849867c0d0b84a3b15863c9f497e1c073c7
     private static void handleClient(Socket socket) {
         String clientIp = socket.getInetAddress().getHostAddress();
         Path currentDirectory = getInitialDirectory();
@@ -53,6 +68,10 @@ public class BaiTap15_RemoteServer {
                 new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8)
             )
         ) {
+<<<<<<< HEAD
+=======
+            //giao thuc xac thuc
+>>>>>>> 7aebb849867c0d0b84a3b15863c9f497e1c073c7
             writer.write("AUTH_REQUIRED\n");
             writer.flush();
 
@@ -133,7 +152,14 @@ public class BaiTap15_RemoteServer {
     private static Path getInitialDirectory() {
         return Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
     }
+<<<<<<< HEAD
 
+    private static Path resolveCd(String command, Path currentDirectory) {
+        try {
+            String target = command.substring(2).trim();
+=======
+    //xu ly thu muc va cac lenh pwd, cd
+    //ham xu ly lenh CD
     private static Path resolveCd(String command, Path currentDirectory) {
         try {
             String target = command.substring(2).trim();
@@ -141,7 +167,19 @@ public class BaiTap15_RemoteServer {
             if (target.isEmpty()) {
                 return currentDirectory;
             }
+            
+            //xu ly dau ngoac kep va duong dan
+            if ((target.startsWith("\"") && target.endsWith("\"")) ||
+                (target.startsWith("'") && target.endsWith("'"))) {
+                target = target.substring(1, target.length() - 1).trim();
+            }
+>>>>>>> 7aebb849867c0d0b84a3b15863c9f497e1c073c7
 
+            if (target.isEmpty()) {
+                return currentDirectory;
+            }
+
+<<<<<<< HEAD
             if ((target.startsWith("\"") && target.endsWith("\"")) ||
                 (target.startsWith("'") && target.endsWith("'"))) {
                 target = target.substring(1, target.length() - 1).trim();
@@ -180,6 +218,37 @@ public class BaiTap15_RemoteServer {
 
             Process process = pb.start();
 
+=======
+            Path newPath = Paths.get(target);
+
+            if (!newPath.isAbsolute()) {
+                newPath = currentDirectory.resolve(newPath);
+            }
+
+            return newPath.normalize().toAbsolutePath();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    //thuc thi lenh he thong
+    private static String executeCommand(String command, Path currentDirectory) {
+        StringBuilder output = new StringBuilder();
+
+        try {
+            ProcessBuilder pb;
+
+            if (isWindows()) {
+                pb = new ProcessBuilder("cmd", "/c", command);
+            } else {
+                pb = new ProcessBuilder("bash", "-lc", command);
+            }
+
+            pb.directory(currentDirectory.toFile());
+            pb.redirectErrorStream(true);
+
+            Process process = pb.start();
+
+>>>>>>> 7aebb849867c0d0b84a3b15863c9f497e1c073c7
             try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)
             )) {
@@ -206,6 +275,7 @@ public class BaiTap15_RemoteServer {
 
         return output.toString();
     }
+<<<<<<< HEAD
 
     private static void sendResult(BufferedWriter writer, String result) throws IOException {
         writer.write(OUTPUT_BEGIN);
@@ -223,4 +293,6 @@ public class BaiTap15_RemoteServer {
         String os = System.getProperty("os.name").toLowerCase();
         return os.contains("win");
     }
+=======
+>>>>>>> 7aebb849867c0d0b84a3b15863c9f497e1c073c7
 }
