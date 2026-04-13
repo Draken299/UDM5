@@ -212,4 +212,23 @@ public class BaiTap15_RemoteServer {
 
         return output.toString();
     }
+
+    //ham ho tro xuat ket qua
+    private static void sendResult(BufferedWriter writer, String result) throws IOException {
+        writer.write(OUTPUT_BEGIN);
+        writer.write("\n");
+        writer.write(result);
+        if (!result.endsWith("\n")) {
+            writer.write("\n");
+        }
+        writer.write(OUTPUT_END);
+        writer.write("\n");
+        writer.flush();
+    }
+    
+    //ham kiem tra he dieu hanh
+    private static boolean isWindows() {
+        String os = System.getProperty("os.name").toLowerCase();
+        return os.contains("win");
+    }
 }
