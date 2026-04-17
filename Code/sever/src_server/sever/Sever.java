@@ -23,7 +23,7 @@ public class BaiTap15_RemoteServer {
     
     //Khoi tao Server Socket
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) { //yeu HT mo cong 7000
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) { //yeu cau HT mo cong 7000
             System.out.println("===== REMOTE COMMAND SERVER =====");
             System.out.println("Server dang chay tai port " + PORT);
             System.out.println("Dang cho client ket noi...");
