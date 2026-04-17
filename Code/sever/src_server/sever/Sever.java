@@ -20,24 +20,27 @@ public class BaiTap15_RemoteServer {
     private static final String SERVER_PASSWORD = "1103";
     private static final String OUTPUT_BEGIN = "OUTPUT_BEGIN";
     private static final String OUTPUT_END = "OUTPUT_END";
-
+    
+    //Khoi tao Server Socket
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) { //yeu HT mo cong 7000
             System.out.println("===== REMOTE COMMAND SERVER =====");
             System.out.println("Server dang chay tai port " + PORT);
             System.out.println("Dang cho client ket noi...");
-            
-            //thiet lap xu ly da luong
-            while (true) {
+             
+            //Vong lap chap nhan ket noi
+            while (true) { //chay lien tuc den khi client goi den
                 Socket socket = serverSocket.accept();
-                String clientIp = socket.getInetAddress().getHostAddress();
+                String clientIp = socket.getInetAddress().getHostAddress(); //lay dia chi ip cua client
                 System.out.println("Client dang ket noi: " + clientIp);
                 
-                //moi client 1 thread rieng
+                //xu ly da luong
                 Thread clientThread = new Thread(() -> handleClient(socket));
                 clientThread.start();
             }
-        } catch (IOException e) {
+        }
+        //xu ly loi
+        catch (IOException e) {
             System.out.println("Loi server: " + e.getMessage());
             e.printStackTrace();
         }
@@ -215,20 +218,25 @@ public class BaiTap15_RemoteServer {
 
     //ham ho tro xuat ket qua
     private static void sendResult(BufferedWriter writer, String result) throws IOException {
-        writer.write(OUTPUT_BEGIN);
+        writer.write(OUTPUT_BEGIN); //gui dau hieu bat dau
         writer.write("\n");
-        writer.write(result);
+
+        writer.write(result); //gui noi dung ket qua thuc te
+
+        // kiem tra va tu dong them dong moi neu ket qua chua co
         if (!result.endsWith("\n")) {
             writer.write("\n");
         }
-        writer.write(OUTPUT_END);
+
+        writer.write(OUTPUT_END); //gui dau hieu ket thuc
         writer.write("\n");
-        writer.flush();
+
+        writer.flush(); //day du lieu di ngay lap tuc
     }
     
     //ham kiem tra he dieu hanh
     private static boolean isWindows() {
-        String os = System.getProperty("os.name").toLowerCase();
-        return os.contains("win");
+        String os = System.getProperty("os.name").toLowerCase(); //lay ten he thong va chuyen thanh chu
+        return os.contains("win"); //kiem tra xem ten co chua chuoi "win" hay khong
     }
 }
